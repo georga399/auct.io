@@ -1,0 +1,6 @@
+.vscode/
+postgres_data/
+rabbitmq/
+
+bin/
+obj/

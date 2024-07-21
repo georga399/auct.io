@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    ports:
+      - 5432:5432
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - 15672:15672
+      - 5672:5672
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq
+
+    networks:
+      - app-network
+
+  auctio-identity:
+    build:
+      context: .
+      dockerfile: src/Auctio.Identity/Dockerfile
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5001
+      - ConnectionStrings__IdentityDb=Host=postgres;Database=identity;Username=postgres;Password=mysecretpassword
+      - RabbitMQ__HostName=rabbitmq
+    ports:
+      - 5001:5001
+    networks:
+      - app-network
+
+  auctio-userprofiles:
+    build:
+      context: .
+      dockerfile: src/Auctio.UserProfiles/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5002
+      - ConnectionStrings__UserProfilesDb=Host=postgres;Database=userprofiles;Username=postgres;Password=mysecretpassword
+      - Redis__Host=redis
+      - RabbitMQ__HostName=rabbitmq
+    ports:
+      - 5002:5002
+    networks:
+      - app-network
+
+  auctio-items:
+    build:
+      context: .
+      dockerfile: src/Auctio.Items/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5003
+      - ConnectionStrings__ItemsDb=Host=postgres;Database=items;Username=postgres;Password=mysecretpassword
+      - Redis__Host=redis
+    ports:
+      - 5003:5003
+    networks:
+      - app-network
+
+networks:
+  app-network:
+
+volumes:
+  postgres_data:
