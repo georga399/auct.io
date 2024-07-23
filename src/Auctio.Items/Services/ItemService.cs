@@ -15,6 +15,10 @@ public class ItemService
     {
         return await _repository.GetItems(username);
     }
+    public async Task<IEnumerable<DTOs.Item>> GetItemsByCursor(uint cursor = uint.MaxValue)
+    {
+        return await _repository.GetItemsByCursor(cursor);
+    }
     public async Task<DTOs.Item?> GetItem(int id)
     {
         var cachedItem = await _cacheService.GetItemAsync(id);

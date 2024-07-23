@@ -131,4 +131,32 @@ public class ItemsRepository
             return false;
         }
     }
+    public async Task<IEnumerable<DTOs.Item>> GetItemsByCursor(uint cursor = uint.MaxValue)
+    {
+        using var connection = await _dataSource.OpenConnectionAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT * FROM items WHERE id < @cursor ORDER BY id DESC LIMIT 20";
+        // READ ITEMS
+        command.Parameters.AddWithValue("@cursor", (int)cursor);
+
+        using var reader = await command.ExecuteReaderAsync();
+        var items = new List<DTOs.Item>();
+        while (await reader.ReadAsync())
+        {
+            var item = new DTOs.Item(
+                reader.GetInt32(0),               // id
+                reader.GetString(1),              // name
+                reader.GetString(2),              // user_id
+                reader.GetString(3),              // user_name
+                reader.GetDateTime(4),            // created_at
+                reader.IsDBNull(5) ? null : reader.GetString(5), // description
+                reader.IsDBNull(6) ? (double?)null : reader.GetDouble(6) // cost
+            );
+
+            items.Add(item);
+        }
+
+        return items;
+
+    }
 }

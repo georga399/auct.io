@@ -17,11 +17,21 @@ public class ItemsController : ControllerBase
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> GetItems(string? username)
+    public async Task<IActionResult> GetLastItems(string? username)
     {
         var items = await _itemService.GetItemsAsync(username!);
         return Ok(items);
     }
+    [HttpGet("cursor/{cursor:int}")]
+    public async Task<IActionResult> GetItemByCursor(int cursor)
+    {
+        if(cursor < 0)
+            return BadRequest("");
+        var items = await _itemService.GetItemsByCursor((uint)cursor);
+        return Ok(items);
+
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetItem(int itemId)
     {
@@ -31,7 +41,6 @@ public class ItemsController : ControllerBase
     [HttpGet("myitems")]
     public async Task<IActionResult> GetMyItems()
     {
-        // Get items of the current user
         var userName = User.FindFirst(ClaimTypes.Name)!.Value;
         var items = await _itemService.GetItemsAsync(userName);
         return Ok(items);
