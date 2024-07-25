@@ -91,6 +91,19 @@ services:
     networks:
       - app-network
 
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+    depends_on:
+      - auctio-identity
+      - auctio-userprofiles
+      - auctio-items
+    networks:
+      - app-network
+
 networks:
   app-network:
 
